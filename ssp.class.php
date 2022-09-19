@@ -17,6 +17,12 @@ class SSP {
 
             for ( $j=0, $jen=count($columns) ; $j<$jen ; $j++ ) {
                 $column = $columns[$j];
+                $ee = explode(".", $column["db"]);
+                if (count($ee) !== 1)
+                {
+                    $column['db'] = $columns[$j]["db"] = $ee[1];
+                }
+
 
                 // Is there a formatter?
                 if ( isset( $column['formatter'] ) ) {
@@ -343,7 +349,7 @@ class SSP {
         $resTotalLength = self::sql_exec( $db, $bindings,
             "SELECT COUNT({$primaryKey})
 			 FROM   $table ".
-            $whereAllSql
+            $where // whereAll
         );
         $recordsTotal = $resTotalLength[0][0];
 
@@ -396,14 +402,14 @@ class SSP {
     /**
      * Execute an SQL query on the database
      *
-     * @param  resource $db  Database handler
+     * @param  \PDO $db  Database handler
      * @param  array    $bindings Array of PDO binding values from bind() to be
      *   used for safely escaping strings. Note that this can be given as the
      *   SQL query string if no bindings are required.
      * @param  string   $sql SQL query to execute.
      * @return array         Result from the query (all rows)
      */
-    static function sql_exec ( $db, $bindings, $sql=null )
+    static function sql_exec (\PDO $db, $bindings, $sql=null )
     {
         // Argument shifting
         if ( $sql === null ) {
@@ -415,6 +421,14 @@ class SSP {
 
         // Bind parameters
         if ( is_array( $bindings ) ) {
+            if (count($bindings))
+            {
+             /*   echo "------<br/>";
+                var_dump($sql);
+                echo "<br/>";
+                var_dump($bindings);
+                echo "<br/>";*/
+            }
             for ( $i=0, $ien=count($bindings) ; $i<$ien ; $i++ ) {
                 $binding = $bindings[$i];
                 $stmt->bindValue( $binding['key'], $binding['val'], $binding['type'] );
