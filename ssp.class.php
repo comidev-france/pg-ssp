@@ -20,23 +20,22 @@ class SSP
             for ($j=0, $jen=count($columns) ; $j<$jen ; $j++) {
                 $column = $columns[$j];
                 $ee = explode(".", $column["db"]);
-                if (count($ee) !== 1)
-                {
+                if (count($ee) !== 1) {
                     $column['db'] = $columns[$j]["db"] = $ee[1];
                 }
                 if (isset($column['formatter'])) {
-                    if(empty($column['db'])){
+                    if (empty($column['db'])) {
                         $row[ $column['dt'] ] = $column['formatter']($data[$i]);
                     }
-                    else{
+                    else {
                         $row[ $column['dt'] ] = $column['formatter']($data[$i][ $column['db'] ], $data[$i]);
                     }
                 }
                 else {
-                    if(!empty($column['db'])){
+                    if (!empty($column['db'])) {
                         $row[ $column['dt'] ] = $data[$i][ $columns[$j]['db'] ];
                     }
-                    else{
+                    else {
                         $row[ $column['dt'] ] = "";
                     }
                 }
@@ -57,11 +56,9 @@ class SSP
     static function limit (array $request): string
     {
         $limit = '';
-
         if (isset($request['start']) && $request['length'] != -1) {
             $limit = "LIMIT " . intval($request['length']) . " OFFSET ".intval($request['start']);
         }
-
         return $limit;
     }
 
@@ -129,7 +126,7 @@ class SSP
                 $column = $columns[ $columnIdx ];
 
                 if ($requestColumn['searchable'] == 'true') {
-                    if(!empty($column['db'])){
+                    if (!empty($column['db'])) {
                         $binding = self::bind($bindings, '%' . $str . '%');
                         $globalSearch[] = "CAST(".$column['db']." as varchar)  LIKE ".$binding;
                     }
@@ -141,12 +138,10 @@ class SSP
                 $requestColumn = $request['columns'][$i];
                 $columnIdx = array_search($requestColumn['data'], $dtColumns);
                 $column = $columns[ $columnIdx ];
-
                 $str = $requestColumn['search']['value'];
-
                 if ($requestColumn['searchable'] == 'true' &&
                     $str != '') {
-                    if(!empty($column['db'])){
+                    if (!empty($column['db'])) {
                         $binding = self::bind($bindings, '%' . $str . '%');
                         $columnSearch[] = "CAST(".$column['db']." as varchar)  LIKE ".$binding;
                     }
@@ -282,9 +277,7 @@ class SSP
        );
         $recordsTotal = $resTotalLength[0][0];
         return [
-            "draw"            => isset ($request['draw']) ?
-                intval($request['draw']) :
-                0,
+            "draw"            => isset ($request['draw']) ? intval($request['draw']) : 0,
             "recordsTotal"    => intval($recordsTotal),
             "recordsFiltered" => intval($recordsFiltered),
             "data"            => self::data_output($columns, $data)
@@ -370,7 +363,7 @@ class SSP
     {
         $out = [];
         for ($i=0, $len=count($a) ; $i<$len ; $i++) {
-            if(empty($a[$i][$prop])){
+            if (empty($a[$i][$prop])) {
                 continue;
             }
             //removing the $out array index confuses the filter method in doing proper binding,
