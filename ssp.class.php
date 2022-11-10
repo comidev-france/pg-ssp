@@ -19,21 +19,23 @@ class SSP
             $row = [];
             for ($j=0, $jen=count($columns) ; $j<$jen ; $j++) {
                 $column = $columns[$j];
-                $ee = explode(".", $column["db"]);
-                if (count($ee) !== 1) {
+              //  $ee = explode(".", $column["db"]);
+              /*  if (count($ee) !== 1) {
+                    var_dump($data);
+                    exit();
                     $column['db'] = $columns[$j]["db"] = $ee[1];
-                }
+                }*/
                 if (isset($column['formatter'])) {
                     if (empty($column['db'])) {
                         $row[ $column['dt'] ] = $column['formatter']($data[$i]);
                     }
                     else {
-                        $row[ $column['dt'] ] = $column['formatter']($data[$i][ $column['db'] ], $data[$i]);
+                        $row[ $column['dt'] ] = $column['formatter']($data[$i][ $column['dt'] ], $data[$i]);
                     }
                 }
                 else {
                     if (!empty($column['db'])) {
-                        $row[ $column['dt'] ] = $data[$i][ $columns[$j]['db'] ];
+                        $row[ $column['dt'] ] = $data[$i][ $columns[$j]['dt'] ];
                     }
                     else {
                         $row[ $column['dt'] ] = "";
@@ -119,7 +121,12 @@ class SSP
         $dtColumns = self::pluck($columns, 'dt');
         if (isset($request['search']) && $request['search']['value'] != '') {
             $str = $request['search']['value'];
-
+            $check_french_date_format = explode('/', $str);
+            if (count($check_french_date_format))
+            {
+                $check_french_date_format = array_reverse($check_french_date_format);
+                $str = $str . "|" . implode("-", $check_french_date_format);
+            }
             for ($i=0, $ien=count($request['columns']) ; $i<$ien ; $i++) {
                 $requestColumn = $request['columns'][$i];
                 $columnIdx = array_search($requestColumn['data'], $dtColumns);
@@ -127,8 +134,19 @@ class SSP
 
                 if ($requestColumn['searchable'] == 'true') {
                     if (!empty($column['db'])) {
-                        $binding = self::bind($bindings, '%' . $str . '%');
-                        $globalSearch[] = "CAST(".$column['db']." as varchar)  LIKE ".$binding;
+
+                        $possibilities = explode("|", $str);
+                        $sql_or = "(false ";
+
+                        foreach ($possibilities as $possibility)
+                        {
+                            $binding = self::bind($bindings, '%' . $possibility . '%');
+                            $sql_or .= "OR (LOWER(CAST(".$column['db']." as varchar))  LIKE LOWER(".$binding . "))";
+                        }
+
+                        $sql_or .= ")";
+                        $globalSearch[] = $sql_or;
+
                     }
                 }
             }
@@ -142,8 +160,17 @@ class SSP
                 if ($requestColumn['searchable'] == 'true' &&
                     $str != '') {
                     if (!empty($column['db'])) {
-                        $binding = self::bind($bindings, '%' . $str . '%');
-                        $columnSearch[] = "CAST(".$column['db']." as varchar)  LIKE ".$binding;
+                        $possibilities = explode("|", $str);
+                        $sql_or = "(false ";
+
+                        foreach ($possibilities as $possibility)
+                        {
+                            $binding = self::bind($bindings, '%' . $possibility . '%');
+                            $sql_or .= "OR (LOWER(CAST(".$column['db']." as varchar))  LIKE LOWER(".$binding . "))";
+                        }
+
+                        $sql_or .= ")";
+                        $columnSearch[] = $sql_or;
                     }
                 }
             }
@@ -160,6 +187,8 @@ class SSP
         if ($where !== '') {
             $where = 'WHERE '.$where;
         }
+   //     var_dump($where);
+   //     var_dump($bindings);
         return $where;
     }
 
@@ -243,6 +272,7 @@ class SSP
         $limit = self::limit($request);
         $order = self::order($request, $columns);
         $where = self::filter($request, $columns, $bindings);
+    //    var_dump($where);
         $whereResult = self::_flatten($whereResult);
         $whereAll = self::_flatten($whereAll);
         if ($whereResult) {
